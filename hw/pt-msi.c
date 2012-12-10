@@ -213,7 +213,7 @@ void pt_msi_disable(struct pt_dev *dev)
 
 out:
     /* clear msi info */
-    dev->msi->flags = 0;
+    dev->msi->flags &= ~(MSI_FLAG_UNINIT | PT_MSI_MAPPED | PCI_MSI_FLAGS_ENABLE);
     dev->msi->pirq = -1;
     dev->msi_trans_en = 0;
 }
