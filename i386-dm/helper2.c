@@ -339,21 +339,40 @@ static void do_outp(CPUState *env, unsigned long addr,
     }
 }
 
-static inline void read_physical(uint64_t addr, unsigned long size, void *val)
+/*
+ * Helper functions which read/write an object from/to physical guest
+ * memory, as part of the implementation of an ioreq.
+ *
+ * Equivalent to
+ *   cpu_physical_memory_rw(addr + (req->df ? -1 : +1) * req->size * i,
+ *                          val, req->size, 0/1)
+ * except without the integer overflow problems.
+ */
+static void rw_phys_req_item(target_phys_addr_t addr,
+                             ioreq_t *req, uint32_t i, void *val, int rw)
 {
-    return cpu_physical_memory_rw((target_phys_addr_t)addr, val, size, 0);
+    /* Do everything unsigned so overflow just results in a truncated result
+     * and accesses to undesired parts of guest memory, which is up
+     * to the guest */
+    target_phys_addr_t offset = (target_phys_addr_t)req->size * i;
+    if (req->df) addr -= offset;
+    else addr += offset;
+    cpu_physical_memory_rw(addr, val, req->size, rw);
 }
-
-static inline void write_physical(uint64_t addr, unsigned long size, void *val)
+static inline void read_phys_req_item(target_phys_addr_t addr,
+                                      ioreq_t *req, uint32_t i, void *val)
 {
-    return cpu_physical_memory_rw((target_phys_addr_t)addr, val, size, 1);
+    rw_phys_req_item(addr, req, i, val, 0);
+}
+static inline void write_phys_req_item(target_phys_addr_t addr,
+                                       ioreq_t *req, uint32_t i, void *val)
+{
+    rw_phys_req_item(addr, req, i, val, 1);
 }
 
 static void cpu_ioreq_pio(CPUState *env, ioreq_t *req)
 {
-    int i, sign;
-
-    sign = req->df ? -1 : 1;
+    uint32_t i;
 
     if (req->dir == IOREQ_READ) {
         if (!req->data_is_ptr) {
@@ -363,9 +382,7 @@ static void cpu_ioreq_pio(CPUState *env, ioreq_t *req)
 
             for (i = 0; i < req->count; i++) {
                 tmp = do_inp(env, req->addr, req->size);
-                write_physical((target_phys_addr_t) req->data
-                  + (sign * i * req->size),
-                  req->size, &tmp);
+                write_phys_req_item(req->data, req, i, &tmp);
             }
         }
     } else if (req->dir == IOREQ_WRITE) {
@@ -375,9 +392,7 @@ static void cpu_ioreq_pio(CPUState *env, ioreq_t *req)
             for (i = 0; i < req->count; i++) {
                 unsigned long tmp = 0;
 
-                read_physical((target_phys_addr_t) req->data
-                  + (sign * i * req->size),
-                  req->size, &tmp);
+                read_phys_req_item(req->data, req, i, &tmp);
                 do_outp(env, req->addr, req->size, tmp);
             }
         }
@@ -386,22 +401,16 @@ static void cpu_ioreq_pio(CPUState *env, ioreq_t *req)
 
 static void cpu_ioreq_move(CPUState *env, ioreq_t *req)
 {
-    int i, sign;
-
-    sign = req->df ? -1 : 1;
+    uint32_t i;
 
     if (!req->data_is_ptr) {
         if (req->dir == IOREQ_READ) {
             for (i = 0; i < req->count; i++) {
-                read_physical(req->addr
-                  + (sign * i * req->size),
-                  req->size, &req->data);
+                read_phys_req_item(req->addr, req, i, &req->data);
             }
         } else if (req->dir == IOREQ_WRITE) {
             for (i = 0; i < req->count; i++) {
-                write_physical(req->addr
-                  + (sign * i * req->size),
-                  req->size, &req->data);
+                write_phys_req_item(req->addr, req, i, &req->data);
             }
         }
     } else {
@@ -409,21 +418,13 @@ static void cpu_ioreq_move(CPUState *env, ioreq_t *req)
 
         if (req->dir == IOREQ_READ) {
             for (i = 0; i < req->count; i++) {
-                read_physical(req->addr
-                  + (sign * i * req->size),
-                  req->size, &tmp);
-                write_physical((target_phys_addr_t )req->data
-                  + (sign * i * req->size),
-                  req->size, &tmp);
+                read_phys_req_item(req->addr, req, i, &tmp);
+                write_phys_req_item(req->data, req, i, &tmp);
             }
         } else if (req->dir == IOREQ_WRITE) {
             for (i = 0; i < req->count; i++) {
-                read_physical((target_phys_addr_t) req->data
-                  + (sign * i * req->size),
-                  req->size, &tmp);
-                write_physical(req->addr
-                  + (sign * i * req->size),
-                  req->size, &tmp);
+                read_phys_req_item(req->data, req, i, &tmp);
+                write_phys_req_item(req->addr, req, i, &tmp);
             }
         }
     }
