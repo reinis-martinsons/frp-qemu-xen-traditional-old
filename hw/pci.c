@@ -871,11 +871,6 @@ void pci_unplug_netifs(void)
     }
 }
 
-typedef struct {
-    PCIDevice dev;
-    PCIBus *bus;
-} PCIBridge;
-
 void pci_bridge_write_config(PCIDevice *d,
                              uint32_t address, uint32_t val, int len)
 {

@@ -222,6 +222,11 @@ struct PCIDevice {
     int irq_state[4];
 };
 
+typedef struct {
+    PCIDevice dev;
+    PCIBus *bus;
+} PCIBridge;
+
 extern char direct_pci_str[];
 extern int direct_pci_msitranslate;
 extern int direct_pci_power_mgmt;

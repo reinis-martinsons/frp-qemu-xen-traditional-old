@@ -3,6 +3,7 @@
  */
 
 #include "pass-through.h"
+#include "pci.h"
 #include "pci/header.h"
 #include "pci/pci.h"
 
@@ -40,9 +41,26 @@ void intel_pch_init(PCIBus *bus)
     did = pt_pci_host_read(pci_dev_1f, PCI_DEVICE_ID, 2);
     rid = pt_pci_host_read(pci_dev_1f, PCI_REVISION, 1);
 
-    if ( vid == PCI_VENDOR_ID_INTEL )
-        pci_bridge_init(bus, PCI_DEVFN(0x1f, 0), vid, did, rid,
-                        pch_map_irq, "intel_bridge_1f");
+    if (vid == PCI_VENDOR_ID_INTEL) {
+        PCIBridge *s = (PCIBridge *)pci_register_device(bus, "intel_bridge_1f",
+                sizeof(PCIBridge), PCI_DEVFN(0x1f, 0), NULL, pci_bridge_write_config);
+
+        pci_config_set_vendor_id(s->dev.config, vid);
+        pci_config_set_device_id(s->dev.config, did);
+
+        s->dev.config[PCI_COMMAND] = 0x06; // command = bus master, pci mem
+        s->dev.config[PCI_COMMAND + 1] = 0x00;
+        s->dev.config[PCI_STATUS] = 0xa0; // status = fast back-to-back, 66MHz, no error
+        s->dev.config[PCI_STATUS + 1] = 0x00; // status = fast devsel
+        s->dev.config[PCI_REVISION] = rid;
+        s->dev.config[PCI_CLASS_PROG] = 0x00; // programming i/f
+        pci_config_set_class(s->dev.config, PCI_CLASS_BRIDGE_ISA);
+        s->dev.config[PCI_LATENCY_TIMER] = 0x10;
+        s->dev.config[PCI_HEADER_TYPE] = 0x80;
+        s->dev.config[PCI_SEC_STATUS] = 0xa0;
+
+        s->bus = pci_register_secondary_bus(&s->dev, pch_map_irq);
+    }
 }
 
 uint32_t igd_read_opregion(struct pt_dev *pci_dev)
