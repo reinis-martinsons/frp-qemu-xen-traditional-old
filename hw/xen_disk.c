@@ -635,7 +635,7 @@ static int blk_init(struct XenDevice *xendev)
 	return -1;
 
     /* read-only ? */
-    qflags = BDRV_O_NOCACHE;
+    qflags = BDRV_O_CACHE_WB;
     if (strcmp(blkdev->mode, "w") == 0) {
 	mode   = O_RDWR;
 	qflags |= BDRV_O_RDWR;
