@@ -834,8 +834,6 @@ int qemu_cpu_add_remove(int cpu, int state)
 }
 void qemu_cpu_notify(void)
 {
-    if (gpe_state.gpe0_en[0] & 4) {
-        qemu_set_irq(sci_irq, 1);
-        qemu_set_irq(sci_irq, 0);
-    }
+    if (gpe_state.gpe0_en[0] & 4)
+        qemu_irq_pulse(sci_irq);
 }
