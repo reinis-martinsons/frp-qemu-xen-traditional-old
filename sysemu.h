@@ -173,9 +173,11 @@ extern int drive_add(const char *file, const char *fmt, ...);
 extern int drive_init(struct drive_opt *arg, int snapshot, void *machine);
 
 /* acpi */
-void qemu_cpu_add_remove(int cpu, int state);
+/* Returns 0 if nothing changed, 1 if added or removed and < 0 for errors. */
+int qemu_cpu_add_remove(int cpu, int state);
 void qemu_system_hot_add_init(void);
 void qemu_system_device_hot_add(int pcibus, int slot, int state);
+void qemu_cpu_notify(void);
 
 /* device-hotplug */
 

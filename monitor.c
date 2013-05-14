@@ -1485,8 +1485,8 @@ static void do_cpu_set_nr(int value, const char *status)
         term_printf("invalid status: %s\n", status);
         return;
     }
-
-    qemu_cpu_add_remove(value, state);
+    if (qemu_cpu_add_remove(value, state))
+        qemu_cpu_notify();
 }
 
 /* Please update qemu-doc.texi when adding or changing commands */

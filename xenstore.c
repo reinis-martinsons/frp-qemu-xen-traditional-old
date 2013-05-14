@@ -1005,6 +1005,7 @@ static void xenstore_process_vcpu_set_event(char **vec)
     char *act = NULL;
     char *vcpustr, *node = vec[XS_WATCH_PATH];
     unsigned int vcpu, len;
+    int changed = -EINVAL;
 
     vcpustr = strstr(node, "cpu/");
     if (!vcpustr) {
@@ -1020,13 +1021,15 @@ static void xenstore_process_vcpu_set_event(char **vec)
     }
 
     if (!strncmp(act, "online", len))
-        qemu_cpu_add_remove(vcpu, 1);
+        changed = qemu_cpu_add_remove(vcpu, 1);
     else if (!strncmp(act, "offline", len))
-        qemu_cpu_add_remove(vcpu, 0);
+        changed = qemu_cpu_add_remove(vcpu, 0);
     else
         fprintf(stderr, "vcpu-set: command error.\n");
 
     free(act);
+    if (changed > 0)
+        qemu_cpu_notify();
     return;
 }
 
