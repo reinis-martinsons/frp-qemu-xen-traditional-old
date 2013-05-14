@@ -22,6 +22,7 @@
 #include "pci.h"
 #include "qemu-timer.h"
 #include "qemu-xen.h"
+#include "xen_backend.h"
 
 struct xs_handle *xsh = NULL;
 static char *media_filename[MAX_DRIVES+1];
@@ -999,25 +1000,24 @@ void xenstore_record_dm_state(const char *state)
 {
     xenstore_record_dm("state", state);
 }
-
-static void xenstore_process_vcpu_set_event(char **vec)
+static int xenstore_process_one_vcpu_set_event(char *node)
 {
     char *act = NULL;
-    char *vcpustr, *node = vec[XS_WATCH_PATH];
+    char *vcpustr;
     unsigned int vcpu, len;
     int changed = -EINVAL;
 
     vcpustr = strstr(node, "cpu/");
     if (!vcpustr) {
         fprintf(stderr, "vcpu-set: watch node error.\n");
-        return;
+        return changed;
     }
     sscanf(vcpustr, "cpu/%u", &vcpu);
 
     act = xs_read(xsh, XBT_NULL, node, &len);
     if (!act) {
         fprintf(stderr, "vcpu-set: no command yet.\n");
-        return;
+        return changed;
     }
 
     if (!strncmp(act, "online", len))
@@ -1028,8 +1028,61 @@ static void xenstore_process_vcpu_set_event(char **vec)
         fprintf(stderr, "vcpu-set: command error.\n");
 
     free(act);
-    if (changed > 0)
+    return changed;
+}
+static void xenstore_process_vcpu_set_event(char **vec)
+{
+    int changed = 0, rc, i, num = 0;
+    char *vcpu, **dir;
+    char *path = vec[XS_WATCH_PATH];
+
+    /*
+     * Process the event right away in case the loop below fails
+     * to get to vCPU that is in the event.
+     */
+    rc = xenstore_process_one_vcpu_set_event(path);
+    if (rc > 0)
+        changed = 1;
+    /*
+     * We get: /local/domain/<domid>/cpu/<vcpu>/availability or
+     * (at init) /local/domain/<domid>/cpu [ignore it] and need to
+     * iterate over /local/domain/<domid>/cpu/ directory.
+     */
+    vcpu = strstr(path, "cpu/");
+    if (!vcpu) {
+        fprintf(stderr,"[%s]: %s has no CPU!\n", __func__, path);
+        return;
+    }
+    /* Eliminate '/availability' */
+    vcpu[3] = '\0';
+    dir = xs_directory(xsh, XBT_NULL, path, &num);
+
+    if (!dir) {
+        fprintf(stderr, "[%s]: directory %s has no dirs!\n", __func__, path);
+        return;
+    }
+    if (num != vcpus)
+        fprintf(stderr, "[%s]: %d (number of vcpu entries) != %d (maxvcpus)! "\
+                "Continuing on..\n", __func__, num, vcpus);
+
+    for (i = 0; i < num; i++) {
+        char attr[XEN_BUFSIZE];
+
+        /* Construct "/local/domain/<domid>/cpu" (path) with <vcpu> (attr),
+         * and "availability" with '/' sprinkled around. */
+        snprintf(attr, XEN_BUFSIZE, "%s/%s/%s", path, dir[i],  "availability");
+        rc = xenstore_process_one_vcpu_set_event(attr);
+
+        if (rc > 0)
+            changed = 1;
+        if (rc < 0) /* say xs_read failed */
+            break;
+    }
+    free (dir);
+    if (changed > 0) {
+        fprintf(stderr, "Notifying OS about CPU hotplug changes.\n");
         qemu_cpu_notify();
+    }
     return;
 }
 
