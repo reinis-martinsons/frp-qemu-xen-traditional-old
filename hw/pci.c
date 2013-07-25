@@ -938,6 +938,16 @@ PCIBus *pci_bridge_init(PCIBus *bus, int devfn, uint16_t vid, uint16_t did,
     return s->bus;
 }
 
+PCIBus *pci_isa_bridge_init(PCIBus *bus, int devfn, uint16_t vid, uint16_t did,
+                            uint8_t rid, pci_map_irq_fn map_irq, const char *name)
+{
+    PCIBus *s = pci_bridge_init(bus, devfn, vid, did, rid, map_irq, name);
+
+    pci_config_set_class(s->parent_dev->config, PCI_CLASS_BRIDGE_ISA);
+    s->parent_dev->config[PCI_HEADER_TYPE] = 0x80;
+    return s;
+}
+
 int pt_chk_bar_overlap(PCIBus *bus, int devfn, uint32_t addr,
                         uint32_t size, uint8_t type)
 {

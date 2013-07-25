@@ -271,6 +271,9 @@ void pci_info(void);
 PCIBus *pci_bridge_init(PCIBus *bus, int devfn, uint16_t vid, uint16_t did,
                         uint8_t rid, pci_map_irq_fn map_irq, const char *name);
 
+PCIBus *pci_isa_bridge_init(PCIBus *bus, int devfn, uint16_t vid, uint16_t did,
+                            uint8_t rid, pci_map_irq_fn map_irq, const char *name);
+
 #define NR_PCI_FUNC          8
 #define NR_PCI_DEV           32
 #define NR_PCI_DEVFN         (NR_PCI_FUNC * NR_PCI_DEV)

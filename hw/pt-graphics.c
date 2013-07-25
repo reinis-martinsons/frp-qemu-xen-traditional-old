@@ -3,6 +3,7 @@
  */
 
 #include "pass-through.h"
+#include "pci.h"
 #include "pci/header.h"
 #include "pci/pci.h"
 
@@ -40,9 +41,11 @@ void intel_pch_init(PCIBus *bus)
     did = pt_pci_host_read(pci_dev_1f, PCI_DEVICE_ID, 2);
     rid = pt_pci_host_read(pci_dev_1f, PCI_REVISION, 1);
 
-    if ( vid == PCI_VENDOR_ID_INTEL )
-        pci_bridge_init(bus, PCI_DEVFN(0x1f, 0), vid, did, rid,
-                        pch_map_irq, "intel_bridge_1f");
+    if (vid == PCI_VENDOR_ID_INTEL) {
+        pci_isa_bridge_init(bus, PCI_DEVFN(0x1f, 0), vid, did, rid,
+                            pch_map_irq, "intel_bridge_1f");
+
+    }
 }
 
 uint32_t igd_read_opregion(struct pt_dev *pci_dev)
