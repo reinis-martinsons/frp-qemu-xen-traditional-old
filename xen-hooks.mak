@@ -47,9 +47,11 @@ CONFIG_AUDIO=
 OBJS += xenfbfront.o
 else
 ifndef CONFIG_NetBSD
-CPPFLAGS+= -I$(XEN_ROOT)/tools/blktap/lib
+ifneq ($(CONFIG_BLKTAP1),n)
+CPPFLAGS+= -DCONFIG_BLKTAP1 -I$(XEN_ROOT)/tools/blktap/lib
 LIBS += -L$(XEN_ROOT)/tools/blktap/lib -lblktap
 OBJS += xen_blktap.o
+endif
 OBJS += tpm_tis.o
 endif
 endif
