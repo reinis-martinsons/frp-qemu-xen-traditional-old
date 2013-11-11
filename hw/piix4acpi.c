@@ -284,7 +284,7 @@ static inline void clear_bit(uint8_t *map, int bit)
     map[bit / 8] &= ~(1 << (bit % 8));
 }
 
-static void acpi_dbg_writel(void *opaque, uint32_t addr, uint32_t val)
+static void acpi_dbg_writeb(void *opaque, uint32_t addr, uint32_t val)
 {
     PIIX4ACPI_LOG(PIIX4ACPI_LOG_DEBUG, "ACPI: DBG: 0x%08x\n", val);
     PIIX4ACPI_LOG(PIIX4ACPI_LOG_INFO, "ACPI:debug: write addr=0x%x, val=0x%x.\n", addr, val);
@@ -776,7 +776,7 @@ i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
 #ifdef CONFIG_PASSTHROUGH
     php_devfn_init();
 #endif
-    register_ioport_write(ACPI_DBG_IO_ADDR, 4, 4, acpi_dbg_writel, d);
+    register_ioport_write(ACPI_DBG_IO_ADDR, 4, 1, acpi_dbg_writeb, d);
 
     register_savevm("piix4acpi", 0, 2, piix4acpi_save, piix4acpi_load, d);
 
