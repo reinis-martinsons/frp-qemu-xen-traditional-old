@@ -1049,8 +1049,10 @@ static int net_tap_init(VLANState *vlan, const char *model,
     if (!setup_script || !strcmp(setup_script, "no"))
         setup_script = "";
     if (setup_script[0] != '\0') {
-	if (launch_script(setup_script, ifname, script_arg, fd))
+	if (launch_script(setup_script, ifname, script_arg, fd)) {
+	    close(fd);
 	    return -1;
+	}
     }
     s = net_tap_fd_init(vlan, model, name, fd);
     if (!s)
