@@ -2229,11 +2229,15 @@ static int commit_one_file(BDRVVVFATState* s,
     if (fd < 0) {
 	fprintf(stderr, "Could not open %s... (%s, %d)\n", mapping->path,
 		strerror(errno), errno);
+	qemu_free(cluster);
 	return fd;
     }
     if (offset > 0)
-	if (lseek(fd, offset, SEEK_SET) != offset)
+	if (lseek(fd, offset, SEEK_SET) != offset) {
+	    close(fd);
+	    qemu_free(cluster);
 	    return -3;
+	}
 
     while (offset < size) {
 	uint32_t c1;
@@ -2249,11 +2253,17 @@ static int commit_one_file(BDRVVVFATState* s,
 	ret = vvfat_read(s->bs, cluster2sector(s, c),
 	    (uint8_t*)cluster, (rest_size + 0x1ff) / 0x200);
 
-	if (ret < 0)
+	if (ret < 0) {
+	    close(fd);
+	    qemu_free(cluster);
 	    return ret;
+	}
 
-	if (qemu_write_ok(fd, cluster, rest_size) < 0)
+	if (qemu_write_ok(fd, cluster, rest_size) < 0) {
+	    close(fd);
+	    qemu_free(cluster);
 	    return -2;
+	}
 
 	offset += rest_size;
 	c = c1;
@@ -2261,6 +2271,7 @@ static int commit_one_file(BDRVVVFATState* s,
 
     ftruncate(fd, size);
     close(fd);
+    qemu_free(cluster);
 
     return commit_mappings(s, first_cluster, dir_index);
 }
