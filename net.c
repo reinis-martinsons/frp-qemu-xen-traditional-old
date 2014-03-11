@@ -1316,8 +1316,10 @@ static NetSocketState *net_socket_fd_init_dgram(VLANState *vlan,
 {
     struct sockaddr_in saddr;
     int newfd;
-    socklen_t saddr_len;
+    socklen_t saddr_len = sizeof(saddr);
     NetSocketState *s;
+
+    memset(&saddr, 0, sizeof(saddr));
 
     /* fd passed: multicast: "learn" dgram_dst address from bound address and save it
      * Because this may be "shared" socket from a "master" process, datagrams would be recv()
