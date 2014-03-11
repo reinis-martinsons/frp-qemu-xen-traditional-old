@@ -760,6 +760,7 @@ static int read_directory(BDRVVVFATState* s, int mapping_index)
         if (st.st_size > 0x7fffffff) {
 	    fprintf(stderr, "File %s is larger than 2GB\n", buffer);
 	    free(buffer);
+            closedir(dir);
 	    return -2;
         }
 	direntry->size=cpu_to_le32(S_ISDIR(st.st_mode)?0:st.st_size);
@@ -787,6 +788,8 @@ static int read_directory(BDRVVVFATState* s, int mapping_index)
 	    s->current_mapping->read_only =
 		(st.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0;
 	}
+        else
+            qemu_free(buffer);
     }
     closedir(dir);
 
