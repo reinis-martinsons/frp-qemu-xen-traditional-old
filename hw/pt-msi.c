@@ -213,7 +213,8 @@ void pt_msi_disable(struct pt_dev *dev)
 
 out:
     /* clear msi info */
-    dev->msi->flags &= ~(MSI_FLAG_UNINIT | PT_MSI_MAPPED | PCI_MSI_FLAGS_ENABLE);
+    dev->msi->flags &= ~(PT_MSI_MAPPED | PCI_MSI_FLAGS_ENABLE);
+    dev->msi->flags |= MSI_FLAG_UNINIT;
     dev->msi->pirq = -1;
     dev->msi_trans_en = 0;
 }
@@ -447,7 +448,7 @@ static void pci_msix_writel(void *opaque, target_phys_addr_t addr, uint32_t val)
     {
         const volatile uint32_t *vec_ctrl;
 
-        if ( entry->io_mem[offset] == val )
+        if ( entry->io_mem[offset] == val && entry->pirq != -1)
             return;
 
         /*

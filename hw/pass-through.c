@@ -3866,7 +3866,11 @@ static int pt_msgctrl_reg_write(struct pt_dev *ptdev,
         ptdev->msi->flags |= PCI_MSI_FLAGS_ENABLE;
     }
     else
-        ptdev->msi->flags &= ~PCI_MSI_FLAGS_ENABLE;
+    {
+        if (ptdev->msi->flags & PT_MSI_MAPPED) {
+            pt_msi_disable(ptdev);
+        }
+    }
 
     /* pass through MSI_ENABLE bit when no MSI-INTx translation */
     if (!ptdev->msi_trans_en) {
@@ -4013,6 +4017,8 @@ static int pt_msixctrl_reg_write(struct pt_dev *ptdev,
             pt_disable_msi_translate(ptdev);
         }
         pt_msix_update(ptdev);
+    } else if (!(*value & PCI_MSIX_ENABLE) && ptdev->msix->enabled) {
+        pt_msix_disable(ptdev);
     }
 
     ptdev->msix->enabled = !!(*value & PCI_MSIX_ENABLE);
