@@ -3676,7 +3676,6 @@ void pci_cmd646_ide_init(PCIBus *bus, BlockDriverState **hd_table,
     PCIIDEState *d;
     uint8_t *pci_conf;
     int i;
-    qemu_irq *irq;
 
     d = (PCIIDEState *)pci_register_device(bus, "CMD646 IDE",
                                            sizeof(PCIIDEState),
@@ -3718,9 +3717,8 @@ void pci_cmd646_ide_init(PCIBus *bus, BlockDriverState **hd_table,
     for(i = 0; i < 4; i++)
         d->ide_if[i].pci_dev = (PCIDevice *)d;
 
-    irq = qemu_allocate_irqs(cmd646_set_irq, d, 2);
-    ide_init2(&d->ide_if[0], hd_table[0], hd_table[1], irq[0]);
-    ide_init2(&d->ide_if[2], hd_table[2], hd_table[3], irq[1]);
+    ide_init2(&d->ide_if[0], hd_table[0], hd_table[1], qemu_allocate_irq(cmd646_set_irq, d));
+    ide_init2(&d->ide_if[2], hd_table[2], hd_table[3], qemu_allocate_irq(cmd646_set_irq, d));
 
     register_savevm("ide", 0, 3, pci_ide_save, pci_ide_load, d);
     qemu_register_reset(cmd646_reset, d);
