@@ -1768,6 +1768,12 @@ static int protocol_client_msg(VncState *vs, uint8_t *data, size_t len)
 	if (len == 8) {
 	    uint32_t v;
 	    v = read_u32(data, 4);
+	    if (v > (1 << 20)) {
+		error_report("vnc: client_cut_text msg payload has %u bytes"
+			      " which exceeds our limit of 1MB.", v);
+		vnc_client_error(vs);
+		break;
+	    }
 	    if (v)
 		return 8 + v;
 	}
