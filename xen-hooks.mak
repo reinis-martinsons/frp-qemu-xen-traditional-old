@@ -1,5 +1,5 @@
-CPPFLAGS+= -I$(XEN_ROOT)/tools/libxc
-CPPFLAGS+= -I$(XEN_ROOT)/tools/xenstore
+CPPFLAGS+= -I$(XEN_ROOT)/tools/libxc/include
+CPPFLAGS+= -I$(XEN_ROOT)/tools/xenstore/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/include
 
 SSE2 := $(call cc-option,-msse2,)
