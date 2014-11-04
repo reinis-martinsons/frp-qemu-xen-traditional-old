@@ -2674,7 +2674,7 @@ static void cirrus_update_memory_access(CirrusVGAState *s)
 static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
 {
     CirrusVGAState *s = opaque;
-    int val, index;
+    int val = 0xff, index;
 
     /* check port range access depending on color/monochrome mode */
     if ((addr >= 0x3b0 && addr <= 0x3bf && (s->msr & MSR_COLOR_EMULATION))
