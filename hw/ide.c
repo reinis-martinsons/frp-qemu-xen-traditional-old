@@ -919,8 +919,10 @@ static void ide_set_signature(IDEState *s)
     }
 }
 
+static void ide_dma_cancel(BMDMAState *bm);
 static inline void ide_abort_command(IDEState *s)
 {
+    if (s->bmdma) ide_dma_cancel(s->bmdma);
     s->status = READY_STAT | ERR_STAT;
     s->error = ABRT_ERR;
 }
@@ -1098,6 +1100,7 @@ static void dma_buf_commit(IDEState *s, int is_write)
 
 static void ide_dma_error(IDEState *s)
 {
+    if (s->bmdma) ide_dma_cancel(s->bmdma);
     ide_transfer_stop(s);
     s->error = ABRT_ERR;
     s->status = READY_STAT | ERR_STAT;
@@ -1230,7 +1233,7 @@ static void ide_read_dma_cb(void *opaque, int ret)
 	return;
     }
 
-    if (!s->bs) return; /* ouch! (see ide_flush_cb) */
+    if (!s || !s->bs) return; /* ouch! (see ide_dma_error & ide_flush_cb) */
 
     n = s->io_buffer_size >> 9;
     sector_num = ide_get_sector(s);
@@ -1371,7 +1374,7 @@ static void ide_write_dma_cb(void *opaque, int ret)
             return;
     }
 
-    if (!s->bs) return; /* ouch! (see ide_flush_cb) */
+    if (!s || !s->bs) return; /* ouch! (see ide_dma_error & ide_flush_cb) */
 
     n = s->io_buffer_size >> 9;
     sector_num = ide_get_sector(s);
