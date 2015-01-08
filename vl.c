@@ -5952,6 +5952,15 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
+#ifdef CONFIG_PASSTHROUGH
+    for (i = 0; i < nb_pci_emulation; i++) {
+        if (pci_emulation_add(pci_emulation_config_text[i]) < 0) {
+            fprintf(stderr, "Warning: could not add PCI device %s\n",
+                    pci_emulation_config_text[i]);
+        }
+    }
+#endif
+
     machine->init(ram_size, vga_ram_size, boot_devices,
                   kernel_filename, kernel_cmdline, initrd_filename, cpu_model,
 		  direct_pci);
@@ -6067,15 +6076,6 @@ int main(int argc, char **argv, char **envp)
                 qemu_chr_printf(parallel_hds[i], "parallel%d console\r\n", i);
         }
     }
-
-#ifdef CONFIG_PASSTHROUGH
-    for (i = 0; i < nb_pci_emulation; i++) {
-        if (pci_emulation_add(pci_emulation_config_text[i]) < 0) {
-            fprintf(stderr, "Warning: could not add PCI device %s\n",
-                    pci_emulation_config_text[i]);
-        }
-    }
-#endif
 
     for(i = 0; i < MAX_VIRTIO_CONSOLES; i++) {
         const char *devname = virtio_consoles[i];
