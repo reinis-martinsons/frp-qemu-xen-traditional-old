@@ -1658,8 +1658,8 @@ cirrus_hook_read_cr(CirrusVGAState * s, unsigned reg_index, int *reg_value)
     default:
 #ifdef DEBUG_CIRRUS
 	printf("cirrus: inport cr_index %02x\n", reg_index);
-	*reg_value = 0xff;
 #endif
+	*reg_value = 0xff;
 	break;
     }
 
