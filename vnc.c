@@ -1616,6 +1616,16 @@ static void set_pixel_format(VncState *vs,
         return;
     }
 
+    switch (bits_per_pixel) {
+    case 8:
+    case 16:
+    case 32:
+        break;
+    default:
+        vnc_client_error(vs);
+        return;
+    }
+
     vs->clientds = vs->serverds;
     vs->clientds.pf.rmax = red_max;
     count_bits(vs->clientds.pf.rbits, red_max);
