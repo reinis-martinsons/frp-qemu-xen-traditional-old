@@ -711,15 +711,13 @@ void xenstore_parse_domain_config(int hvm_domid)
 
 
     /* Set a watch for log-dirty commands from the migration tools */
-    if (pasprintf(&buf, "/local/domain/0/device-model/%u/logdirty/cmd",
-                  domid) != -1) {
+    if (pasprintf(&buf, "device-model/%u/logdirty/cmd", domid) != -1) {
         xs_watch(xsh, buf, "logdirty");
         fprintf(logfile, "Watching %s\n", buf);
     }
 
     /* Set a watch for suspend requests from the migration tools */
-    if (pasprintf(&buf, 
-                  "/local/domain/0/device-model/%u/command", domid) != -1) {
+    if (pasprintf(&buf, "device-model/%u/command", domid) != -1) {
         xs_watch(xsh, buf, "dm-command");
         fprintf(logfile, "Watching %s\n", buf);
     }
@@ -777,7 +775,7 @@ int xenstore_parse_disable_pf_config ()
     int disable_pf = 0;
     unsigned int len;
 
-    if (pasprintf(&buf, "/local/domain/0/device-model/%u/disable_pf",domid) == -1)
+    if (pasprintf(&buf, "device-model/%u/disable_pf",domid) == -1)
         goto out;
 
     params = xs_read(xsh, XBT_NULL, buf, &len);
@@ -807,15 +805,11 @@ static void xenstore_process_logdirty_event(void)
     unsigned int len;
 
     /* Remember the paths for the command and response entries */
-    if (pasprintf(&ret_path,
-                "/local/domain/0/device-model/%u/logdirty/ret",
-                domid) == -1) {
+    if (pasprintf(&ret_path, "device-model/%u/logdirty/ret", domid) == -1) {
         fprintf(logfile, "Log-dirty: out of memory\n");
         exit(1);
     }
-    if (pasprintf(&cmd_path,
-                "/local/domain/0/device-model/%u/logdirty/cmd",
-                domid) == -1) {
+    if (pasprintf(&cmd_path, "device-model/%u/logdirty/cmd", domid) == -1) {
         fprintf(logfile, "Log-dirty: out of memory\n");
         exit(1);
     }
@@ -854,8 +848,7 @@ static void xenstore_process_dm_command_event(void)
     char *path = NULL, *command = NULL, *par = NULL;
     unsigned int len;
 
-    if (pasprintf(&path, 
-                  "/local/domain/0/device-model/%u/command", domid) == -1) {
+    if (pasprintf(&path, "device-model/%u/command", domid) == -1) {
         fprintf(logfile, "out of memory reading dm command\n");
         goto out;
     }
@@ -874,8 +867,7 @@ static void xenstore_process_dm_command_event(void)
         xen_pause_requested = 0;
     } else if (!strncmp(command, "usb-add", len)) {
         fprintf(logfile, "dm-command: usb-add a usb device\n");
-        if (pasprintf(&path,
-                "/local/domain/0/device-model/%u/parameter", domid) == -1) {
+        if (pasprintf(&path, "device-model/%u/parameter", domid) == -1) {
             fprintf(logfile, "out of memory reading dm command parameter\n");
             goto out;
         }
@@ -888,8 +880,7 @@ static void xenstore_process_dm_command_event(void)
         fprintf(logfile, "dm-command: finish usb-add a usb device:%s\n",par);
     } else if (!strncmp(command, "usb-del", len)) {
         fprintf(logfile, "dm-command: usb-del a usb device\n");
-        if (pasprintf(&path,
-                "/local/domain/0/device-model/%u/parameter", domid) == -1) {
+        if (pasprintf(&path, "device-model/%u/parameter", domid) == -1) {
             fprintf(logfile, "out of memory reading dm command parameter\n");
             goto out;
         }
@@ -904,8 +895,7 @@ static void xenstore_process_dm_command_event(void)
     } else if (!strncmp(command, "pci-rem", len)) {
         fprintf(logfile, "dm-command: hot remove pass-through pci dev \n");
 
-        if (pasprintf(&path, 
-                      "/local/domain/0/device-model/%u/parameter", domid) == -1) {
+        if (pasprintf(&path, "device-model/%u/parameter", domid) == -1) {
             fprintf(logfile, "out of memory reading dm command parameter\n");
             goto out;
         }
@@ -918,8 +908,7 @@ static void xenstore_process_dm_command_event(void)
     } else if (!strncmp(command, "pci-ins", len)) {
         fprintf(logfile, "dm-command: hot insert pass-through pci dev \n");
 
-        if (pasprintf(&path, 
-                      "/local/domain/0/device-model/%u/parameter", domid) == -1) {
+        if (pasprintf(&path, "device-model/%u/parameter", domid) == -1) {
             fprintf(logfile, "out of memory reading dm command parameter\n");
             goto out;
         }
@@ -943,8 +932,7 @@ void xenstore_record_dm(const char *subpath, const char *state)
 {
     char *path = NULL;
 
-    if (pasprintf(&path, 
-                  "/local/domain/0/device-model/%u/%s", domid, subpath) == -1) {
+    if (pasprintf(&path, "device-model/%u/%s", domid, subpath) == -1) {
         fprintf(logfile, "out of memory recording dm \n");
         goto out;
     }
@@ -1521,7 +1509,7 @@ char *xenstore_device_model_read(int domid, const char *key, unsigned int *len)
 {
     char *path = NULL, *value = NULL;
 
-    if (pasprintf(&path, "/local/domain/0/device-model/%d/%s", domid, key) == -1)
+    if (pasprintf(&path, "device-model/%d/%s", domid, key) == -1)
         return NULL;
 
     value = xs_read(xsh, XBT_NULL, path, len);
