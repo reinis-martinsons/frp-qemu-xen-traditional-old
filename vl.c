@@ -1568,7 +1568,7 @@ static void rtc_stop_timer(struct qemu_alarm_timer *t)
 
 static int dynticks_start_timer(struct qemu_alarm_timer *t)
 {
-    struct sigevent ev;
+    struct sigevent ev = { { 0 } };
     timer_t host_timer;
     struct sigaction act;
 
@@ -1578,7 +1578,6 @@ static int dynticks_start_timer(struct qemu_alarm_timer *t)
 
     sigaction(SIGALRM, &act, NULL);
 
-    ev.sigev_value.sival_int = 0;
     ev.sigev_notify = SIGEV_SIGNAL;
     ev.sigev_signo = SIGALRM;
 
