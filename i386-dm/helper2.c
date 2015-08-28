@@ -493,10 +493,19 @@ static int __handle_buffered_iopage(CPUState *env)
 
     memset(&req, 0x00, sizeof(req));
 
-    while (buffered_io_page->read_pointer !=
-           buffered_io_page->write_pointer) {
-        buf_req = &buffered_io_page->buf_ioreq[
-            buffered_io_page->read_pointer % IOREQ_BUFFER_SLOT_NUM];
+    for (;;) {
+        uint32_t rdptr = buffered_io_page->read_pointer, wrptr;
+
+        xen_rmb();
+        wrptr = buffered_io_page->write_pointer;
+        xen_rmb();
+        if (rdptr != buffered_io_page->read_pointer) {
+            continue;
+        }
+        if (rdptr == wrptr) {
+            break;
+        }
+        buf_req = &buffered_io_page->buf_ioreq[rdptr % IOREQ_BUFFER_SLOT_NUM];
         req.size = 1UL << buf_req->size;
         req.count = 1;
         req.addr = buf_req->addr;
@@ -508,15 +517,14 @@ static int __handle_buffered_iopage(CPUState *env)
         req.data_is_ptr = 0;
         qw = (req.size == 8);
         if (qw) {
-            buf_req = &buffered_io_page->buf_ioreq[
-                (buffered_io_page->read_pointer+1) % IOREQ_BUFFER_SLOT_NUM];
+            buf_req = &buffered_io_page->buf_ioreq[(rdptr + 1) %
+                                                   IOREQ_BUFFER_SLOT_NUM];
             req.data |= ((uint64_t)buf_req->data) << 32;
         }
 
         __handle_ioreq(env, &req);
 
-        xen_mb();
-        buffered_io_page->read_pointer += qw ? 2 : 1;
+        __sync_fetch_and_add(&buffered_io_page->read_pointer, qw + 1);
     }
 
     return req.count;
