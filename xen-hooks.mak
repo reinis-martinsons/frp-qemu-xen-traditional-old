@@ -1,3 +1,4 @@
+CPPFLAGS+= -I$(XEN_ROOT)/tools/libs/toollog/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/libxc/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/xenstore/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/include
@@ -19,6 +20,7 @@ CFLAGS += $(CMDLINE_CFLAGS)
 
 LIBS += -L$(XEN_ROOT)/tools/libxc -lxenctrl -lxenguest
 LIBS += -L$(XEN_ROOT)/tools/xenstore -lxenstore
+LIBS += -Wl,-rpath-link=$(XEN_ROOT)/tools/libs/toollog
 
 LDFLAGS := $(CFLAGS) $(LDFLAGS)
 
