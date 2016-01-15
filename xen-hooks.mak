@@ -1,6 +1,7 @@
 CPPFLAGS+= -I$(XEN_ROOT)/tools/libs/toollog/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/libs/evtchn/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/libs/gnttab/include
+CPPFLAGS+= -DXC_WANT_COMPAT_MAP_FOREIGN_API
 CPPFLAGS+= -I$(XEN_ROOT)/tools/libxc/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/xenstore/include
 CPPFLAGS+= -I$(XEN_ROOT)/tools/include
@@ -26,6 +27,7 @@ LIBS += -L$(XEN_ROOT)/tools/libxc -lxenctrl -lxenguest
 LIBS += -L$(XEN_ROOT)/tools/xenstore -lxenstore
 LIBS += -Wl,-rpath-link=$(XEN_ROOT)/tools/libs/toollog
 LIBS += -Wl,-rpath-link=$(XEN_ROOT)/tools/libs/call
+LIBS += -Wl,-rpath-link=$(XEN_ROOT)/tools/libs/foreignmemory
 
 LDFLAGS := $(CFLAGS) $(LDFLAGS)
 
