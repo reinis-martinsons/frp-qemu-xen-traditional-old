@@ -45,7 +45,7 @@ struct XenDevice {
     int                local_port;
 
     xenevtchn_handle   *evtchndev;
-    xc_gnttab          *gnttabdev;
+    xengnttab_handle          *gnttabdev;
 
     struct XenDevOps   *ops;
     TAILQ_ENTRY(XenDevice) next;

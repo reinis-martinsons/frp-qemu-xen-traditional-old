@@ -5,6 +5,7 @@
 #include <inttypes.h>
 
 #include <xenevtchn.h>
+#include <xengnttab.h>
 #include <xenctrl.h>
 #include <xenstore.h>
 #include <xen/io/xenbus.h>
