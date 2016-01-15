@@ -25,6 +25,7 @@ LIBS += -L$(XEN_ROOT)/tools/libs/gnttab -lxengnttab
 LIBS += -L$(XEN_ROOT)/tools/libxc -lxenctrl -lxenguest
 LIBS += -L$(XEN_ROOT)/tools/xenstore -lxenstore
 LIBS += -Wl,-rpath-link=$(XEN_ROOT)/tools/libs/toollog
+LIBS += -Wl,-rpath-link=$(XEN_ROOT)/tools/libs/call
 
 LDFLAGS := $(CFLAGS) $(LDFLAGS)
 
