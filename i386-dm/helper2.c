@@ -48,6 +48,7 @@
 #include <limits.h>
 #include <fcntl.h>
 
+#include <xenevtchn.h>
 #include <xenctrl.h>
 #include <xen/hvm/ioreq.h>
 #include <xen/hvm/hvm_info_table.h>
@@ -104,7 +105,7 @@ buffered_iopage_t *buffered_io_page = NULL;
 QEMUTimer *buffered_io_timer;
 
 /* the evtchn fd for polling */
-xc_interface *xce_handle = NULL;
+xenevtchn_handle *xce_handle = NULL;
 
 /* which vcpu we are serving */
 int send_vcpu = 0;
@@ -141,7 +142,7 @@ CPUX86State *cpu_x86_init(const char *cpu_model)
 
         cpu_single_env = env;
 
-        xce_handle = xc_evtchn_open(NULL, 0);
+        xce_handle = xenevtchn_open(NULL, 0);
         if (xce_handle == NULL) {
             perror("open");
             return NULL;
@@ -149,7 +150,7 @@ CPUX86State *cpu_x86_init(const char *cpu_model)
 
         /* FIXME: how about if we overflow the page here? */
         for (i = 0; i < vcpus; i++) {
-            rc = xc_evtchn_bind_interdomain(
+            rc = xenevtchn_bind_interdomain(
                 xce_handle, domid, shared_page->vcpu_ioreq[i].vp_eport);
             if (rc == -1) {
                 fprintf(logfile, "bind interdomain ioctl error %d\n", errno);
@@ -164,7 +165,7 @@ CPUX86State *cpu_x86_init(const char *cpu_model)
                     errno);
             return NULL;
         }
-        rc = xc_evtchn_bind_interdomain(xce_handle, domid, (uint32_t)bufioreq_evtchn);
+        rc = xenevtchn_bind_interdomain(xce_handle, domid, (uint32_t)bufioreq_evtchn);
         if (rc == -1) {
             fprintf(logfile, "bind interdomain ioctl error %d\n", errno);
             return NULL;
@@ -278,7 +279,7 @@ static ioreq_t *cpu_get_ioreq(void)
     int i;
     evtchn_port_t port;
 
-    port = xc_evtchn_pending(xce_handle);
+    port = xenevtchn_pending(xce_handle);
     if (port == bufioreq_local_port) {
         qemu_mod_timer(buffered_io_timer,
                 BUFFER_IO_MAX_DELAY + qemu_get_clock(rt_clock));
@@ -296,7 +297,7 @@ static ioreq_t *cpu_get_ioreq(void)
         }
 
         // unmask the wanted port again
-        xc_evtchn_unmask(xce_handle, port);
+        xenevtchn_unmask(xce_handle, port);
 
         //get the io packet from shared memory
         send_vcpu = i;
@@ -539,7 +540,7 @@ static void handle_buffered_io(void *opaque)
                 BUFFER_IO_MAX_DELAY + qemu_get_clock(rt_clock));
     } else {
         qemu_del_timer(buffered_io_timer);
-        xc_evtchn_unmask(xce_handle, bufioreq_local_port);
+        xenevtchn_unmask(xce_handle, bufioreq_local_port);
     }
 }
 
@@ -583,7 +584,7 @@ static void cpu_handle_ioreq(void *opaque)
 	}
 
         req->state = STATE_IORESP_READY;
-        xc_evtchn_notify(xce_handle, ioreq_local_port[send_vcpu]);
+        xenevtchn_notify(xce_handle, ioreq_local_port[send_vcpu]);
     }
 }
 
@@ -592,7 +593,7 @@ int xen_pause_requested;
 int main_loop(void)
 {
     CPUState *env = cpu_single_env;
-    int evtchn_fd = xce_handle == NULL ? -1 : xc_evtchn_fd(xce_handle);
+    int evtchn_fd = xce_handle == NULL ? -1 : xenevtchn_fd(xce_handle);
     char *qemu_file;
     fd_set fds;
 
