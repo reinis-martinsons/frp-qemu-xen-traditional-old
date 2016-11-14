@@ -379,6 +379,7 @@ static void cpu_ioreq_pio(CPUState *env, ioreq_t *req)
         fprintf(stderr, "PIO: bad size (%u)\n", req->size);
         exit(-1);
     }
+    req->addr &= 0x0ffffU;
 
     if (req->dir == IOREQ_READ) {
         if (!req->data_is_ptr) {
