@@ -247,8 +247,11 @@ static void xenstore_get_backend_path(char **backend, const char *devtype,
     char *backend_dompath=0;
     char *expected_backend=0;
     char *frontend_backend_path=0;
+    char *frontend_domid_path=0;
     char *backend_frontend_path=0;
     char *frontend_doublecheck=0;
+    char *backend_domid_str=0;
+    int backend_domid;
     int len;
     const char *frontend_idpath_slash;
 
@@ -270,13 +273,21 @@ static void xenstore_get_backend_path(char **backend, const char *devtype,
                   frontend_path)
         == -1) goto out;
 
+    if (pasprintf(&frontend_domid_path, "%s/backend-id",
+		  frontend_path)
+	== -1) goto out;
+
     bpath = xs_read(xsh, XBT_NULL, frontend_backend_path, &len);
 
+    backend_domid_str = xs_read(xsh, XBT_NULL, frontend_domid_path, &len);
+    if (!backend_domid_str) goto out;
+    backend_domid = atoi(backend_domid_str);
+	
     /* now we must check that the backend is intended for use
      * by this frontend, since the frontend's /backend xenstore node
      * is writeable by the untrustworthy guest. */
 
-    backend_dompath = xs_get_domain_path(xsh, domid_backend);
+    backend_dompath = xs_get_domain_path(xsh, backend_domid);
     if (!backend_dompath) goto out;
     
     const char *expected_devtypes[4];
@@ -336,6 +347,8 @@ static void xenstore_get_backend_path(char **backend, const char *devtype,
     free(frontend_backend_path);
     free(backend_frontend_path);
     free(frontend_doublecheck);
+    free(frontend_domid_path);
+    free(backend_domid_str);
 }
 
 static const char *xenstore_get_guest_uuid(void)
